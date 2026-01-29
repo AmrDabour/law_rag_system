@@ -1,0 +1,43 @@
+# Requirements for Egyptian Law RAG System
+# Python 3.11+
+
+# === Core Framework ===
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+pydantic-settings==2.6.0
+python-multipart==0.0.12
+
+# === Vector Database ===
+qdrant-client==1.12.1
+
+# === Redis ===
+redis==5.2.0
+
+# === LLM - Google Generative AI ===
+google-genai==0.3.0
+
+# === Embeddings & ML ===
+torch>=2.2.0
+transformers>=4.45.0
+sentence-transformers>=3.3.0
+
+# === Sparse Encoder ===
+fastembed>=0.4.2
+
+# === PDF Processing ===
+pymupdf>=1.25.0
+
+# === LangChain (for text processing utilities) ===
+langchain>=0.3.7
+langchain-core>=0.3.15
+langchain-text-splitters>=0.3.2
+
+# === Utilities ===
+python-dotenv==1.0.1
+tenacity==9.0.0
+numpy>=1.26.0
+tqdm>=4.66.0
+
+# === Development ===
+httpx>=0.27.0
