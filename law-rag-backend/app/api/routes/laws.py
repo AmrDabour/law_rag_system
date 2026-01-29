@@ -139,3 +139,89 @@ async def reset_country_laws(
         "message": f"Reset collection for {country}",
         "collection": collection_name,
     }
+
+
+@router.get("/laws/{country}/chunks")
+async def browse_country_chunks(
+    country: str,
+    offset: int = 0,
+    limit: int = 20,
+    factory: CollectionFactory = Depends(get_collection_factory),
+):
+    """
+    Browse chunks (documents) in a country's collection.
+    
+    Useful for inspecting the quality of ingested data.
+    
+    - **country**: Country code
+    - **offset**: Starting offset for pagination
+    - **limit**: Number of chunks to return (max 100)
+    """
+    # Validate country
+    try:
+        country_enum = validate_country(country)
+    except HTTPException:
+        raise
+    
+    # Limit to max 100
+    limit = min(limit, 100)
+    
+    collection_name = factory.get_collection_name(country_enum)
+    
+    # Check if collection exists
+    if not factory.client.collection_exists(collection_name):
+        return {
+            "success": True,
+            "country": country,
+            "chunks": [],
+            "total": 0,
+            "offset": offset,
+            "limit": limit,
+        }
+    
+    # Get collection info for total count
+    info = factory.client.get_collection(collection_name)
+    total = info.points_count
+    
+    # Scroll through points
+    try:
+        points, _ = factory.client.scroll(
+            collection_name=collection_name,
+            offset=offset if offset > 0 else None,
+            limit=limit,
+            with_payload=True,
+            with_vectors=False,  # Don't return the actual vectors
+        )
+        
+        chunks = []
+        for point in points:
+            payload = point.payload or {}
+            chunks.append({
+                "id": str(point.id),
+                "law_name": payload.get("law_name", "Unknown"),
+                "law_type": payload.get("law_type", "Unknown"),
+                "article_number": payload.get("article_number"),
+                "article_text": payload.get("article_text", ""),
+                "page_number": payload.get("page_number"),
+                "content": payload.get("content", "")[:500],  # First 500 chars
+                "full_content": payload.get("content", ""),
+                "country": payload.get("country", country),
+            })
+        
+        return {
+            "success": True,
+            "country": country,
+            "collection": collection_name,
+            "chunks": chunks,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "has_more": offset + len(chunks) < total,
+        }
+        
+    except Exception as e:
+        logger.error(f"Error browsing chunks: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to browse chunks: {str(e)}"
+        )

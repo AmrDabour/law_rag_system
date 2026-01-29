@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Law RAG Admin</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">⚖️</div>
+          <span class="logo-text">Law RAG</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-section="dashboard">
+          <i class="fas fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-section="laws">
+          <i class="fas fa-landmark"></i>
+          <span>Laws</span>
+        </div>
+        <div class="nav-item" data-section="ingest">
+          <i class="fas fa-file-upload"></i>
+          <span>Ingest PDF</span>
+        </div>
+        <div class="nav-item" data-section="chat">
+          <i class="fas fa-comments"></i>
+          <span>Chat Test</span>
+        </div>
+        <div class="nav-item" data-section="sessions">
+          <i class="fas fa-history"></i>
+          <span>Sessions</span>
+        </div>
+        <div class="nav-item" data-section="chunks">
+          <i class="fas fa-puzzle-piece"></i>
+          <span>Chunks</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span>System Online</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Dashboard Section -->
+      <section id="section-dashboard" class="section active">
+        <div class="page-header">
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">System overview and collection statistics</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fas fa-globe"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="stat-countries">-</div>
+              <div class="stat-label">Active Countries</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="stat-documents">-</div>
+              <div class="stat-label">Total Documents</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="stat-sessions">-</div>
+              <div class="stat-label">Active Sessions</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i class="fas fa-server"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">
+                <span id="stat-qdrant">-</span> /
+                <span id="stat-redis">-</span> /
+                <span id="stat-models">-</span>
+              </div>
+              <div class="stat-label">Qdrant / Redis / Models</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Countries Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-globe-africa"></i>
+              Country Collections
+            </h3>
+            <button class="btn btn-secondary btn-sm" onclick="refreshData()">
+              <i class="fas fa-sync"></i> Refresh
+            </button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Collection</th>
+                  <th>Documents</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="countries-tbody">
+                <tr>
+                  <td colspan="5" class="loading">
+                    <div class="spinner"></div> Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Laws Management Section -->
+      <section id="section-laws" class="section">
+        <div class="page-header">
+          <h1 class="page-title">Laws Management</h1>
+          <p class="page-subtitle">View, reset, or delete country law collections</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-database"></i>
+              All Collections
+            </h3>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Collection</th>
+                  <th>Documents</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="countries-tbody-laws">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ingest Section -->
+      <section id="section-ingest" class="section">
+        <div class="page-header">
+          <h1 class="page-title">Ingest PDF</h1>
+          <p class="page-subtitle">Upload and process law documents</p>
+        </div>
+
+        <div class="card">
+          <form id="ingest-form">
+            <!-- File Upload -->
+            <div class="form-group">
+              <label class="form-label">PDF File</label>
+              <div class="file-upload" id="file-upload">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <div class="file-upload-text">Drop PDF here or click to browse</div>
+                <div class="file-upload-hint">Supports Arabic law documents</div>
+                <input type="file" id="pdf-file" name="file" accept=".pdf" hidden>
+              </div>
+              <div class="file-name" id="file-name" style="display: none;"></div>
+            </div>
+
+            <!-- Country & Law Type -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <select class="form-select" name="country" required>
+                  <option value="">Select country...</option>
+                  <option value="egypt">🇪🇬 Egypt</option>
+                  <option value="jordan">🇯🇴 Jordan</option>
+                  <option value="uae">🇦🇪 UAE</option>
+                  <option value="saudi">🇸🇦 Saudi Arabia</option>
+                  <option value="kuwait">🇰🇼 Kuwait</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Law Type</label>
+                <select class="form-select" name="law_type" required>
+                  <option value="">Select type...</option>
+                  <option value="criminal">Criminal Law (قانون جنائي)</option>
+                  <option value="civil">Civil Law (قانون مدني)</option>
+                  <option value="commercial">Commercial Law (قانون تجاري)</option>
+                  <option value="economic">Economic Law (قانون اقتصادي)</option>
+                  <option value="administrative">Administrative (قانون إداري)</option>
+                  <option value="arbitration">Arbitration (قانون تحكيم)</option>
+                  <option value="labor">Labor Law (قانون عمل)</option>
+                  <option value="personal_status">Personal Status (أحوال شخصية)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Law Name -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Law Name (Arabic)</label>
+                <input type="text" class="form-input" name="law_name" placeholder="e.g., قانون العقوبات" required
+                  dir="rtl">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Law Name (English)</label>
+                <input type="text" class="form-input" name="law_name_en" placeholder="e.g., Penal Code">
+              </div>
+            </div>
+
+            <!-- Law Number & Year -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Law Number</label>
+                <input type="text" class="form-input" name="law_number" placeholder="e.g., 58">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Law Year</label>
+                <input type="text" class="form-input" name="law_year" placeholder="e.g., 1937">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-upload"></i> Ingest Document
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Chat Section -->
+      <section id="section-chat" class="section">
+        <div class="page-header">
+          <h1 class="page-title">Chat Test</h1>
+          <p class="page-subtitle">Test legal Q&A with the RAG system</p>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div class="chat-settings">
+            <label>Country:</label>
+            <select id="chat-country">
+              <option value="egypt">🇪🇬 Egypt</option>
+              <option value="jordan">🇯🇴 Jordan</option>
+              <option value="uae">🇦🇪 UAE</option>
+              <option value="saudi">🇸🇦 Saudi Arabia</option>
+              <option value="kuwait">🇰🇼 Kuwait</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="clearChat()">
+              <i class="fas fa-trash"></i> Clear Chat
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="createSession()">
+              <i class="fas fa-plus"></i> New Session
+            </button>
+          </div>
+
+          <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+              <div class="message assistant" dir="rtl">
+                مرحباً! أنا المساعد القانوني. يمكنك سؤالي عن أي قانون.
+                <br><br>
+                Hello! I'm your legal assistant. Ask me any legal question.
+              </div>
+            </div>
+
+            <form id="chat-form" class="chat-input-container">
+              <textarea id="chat-input" class="chat-input" placeholder="اكتب سؤالك هنا... / Type your question here..."
+                rows="2" dir="auto"></textarea>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sessions Section -->
+      <section id="section-sessions" class="section">
+        <div class="page-header">
+          <h1 class="page-title">Sessions</h1>
+          <p class="page-subtitle">Manage conversation sessions</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i class="fas fa-history"></i>
+              Active Sessions
+            </h3>
+            <button class="btn btn-primary btn-sm" onclick="createSession()">
+              <i class="fas fa-plus"></i> New Session
+            </button>
+          </div>
+          <div id="sessions-list">
+            <div class="loading">
+              <div class="spinner"></div> Loading sessions...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Chunks Inspector Section -->
+      <section id="section-chunks" class="section">
+        <div class="page-header">
+          <h1 class="page-title">Chunk Inspector</h1>
+          <p class="page-subtitle">Browse and inspect ingested law chunks</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <label style="color: var(--text-secondary);">Country:</label>
+              <select id="chunks-country" class="form-select" style="width: auto;">
+                <option value="egypt">🇪🇬 Egypt</option>
+                <option value="jordan">🇯🇴 Jordan</option>
+                <option value="uae">🇦🇪 UAE</option>
+                <option value="saudi">🇸🇦 Saudi Arabia</option>
+                <option value="kuwait">🇰🇼 Kuwait</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="loadChunks()">
+                <i class="fas fa-search"></i> Load Chunks
+              </button>
+            </div>
+            <div id="chunks-pagination" class="pagination" style="display: none;"></div>
+          </div>
+
+          <div id="chunks-container">
+            <div class="empty-state">
+              <i class="fas fa-puzzle-piece"></i>
+              <p>Select a country and click "Load Chunks" to browse stored data</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chunk Detail Modal -->
+        <div id="chunk-modal" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 id="modal-title">Chunk Details</h3>
+              <button class="btn btn-secondary btn-sm" onclick="closeChunkModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div id="modal-body" class="modal-body" dir="rtl"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/static/admin.js"></script>
+</body>
+
+</html>

@@ -4,8 +4,10 @@ FastAPI application entry point
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import logging
 
 from app.core.config import settings
@@ -24,7 +26,7 @@ async def lifespan(app: FastAPI):
     Handles startup and shutdown events.
     """
     # === STARTUP ===
-    logger.info("🚀 Starting Egyptian Law RAG API...")
+    logger.info("🚀 Starting Law RAG API...")
     logger.info(f"   Environment: {settings.APP_ENV}")
     logger.info(f"   Version: {settings.APP_VERSION}")
     
@@ -57,14 +59,14 @@ async def lifespan(app: FastAPI):
     yield
     
     # === SHUTDOWN ===
-    logger.info("👋 Shutting down Egyptian Law RAG API...")
+    logger.info("👋 Shutting down Law RAG API...")
 
 
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
     description="""
-    Egyptian Law RAG API - Intelligent Legal Assistant
+    Law RAG API - Intelligent Multi-Country Legal Assistant
     
     Features:
     - Hybrid search (Dense + Sparse vectors)
@@ -99,6 +101,11 @@ app.include_router(query.router)
 app.include_router(ingest.router)
 app.include_router(laws.router)
 app.include_router(sessions.router)
+
+# Mount static files for admin frontend
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 # Root endpoint

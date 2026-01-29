@@ -83,7 +83,7 @@ class RedisManager:
         
         self.client.setex(
             f"session:{session_id}",
-            settings.SESSION_TTL_SECONDS,
+            settings.SESSION_TTL,
             json.dumps(session_data, ensure_ascii=False),
         )
         
@@ -143,7 +143,7 @@ class RedisManager:
         # Update with TTL refresh
         self.client.setex(
             f"session:{session_id}",
-            settings.SESSION_TTL_SECONDS,
+            settings.SESSION_TTL,
             json.dumps(session, ensure_ascii=False),
         )
         

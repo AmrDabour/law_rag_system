@@ -50,7 +50,6 @@ class CollectionInfo(BaseModel):
     country: str
     status: str
     points_count: int
-    vectors_count: int
     laws: List[LawInfo] = Field(default_factory=list)
 
 

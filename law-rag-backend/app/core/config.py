@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # === API Configuration ===
-    APP_NAME: str = "Egyptian Law RAG API"
+    APP_NAME: str = "Law RAG API"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = "development"
     DEBUG: bool = False
