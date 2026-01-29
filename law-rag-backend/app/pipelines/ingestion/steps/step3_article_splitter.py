@@ -70,12 +70,19 @@ class ArticleSplitterStep(PipelineStep):
         re.MULTILINE
     )
 
+    # === CONSTANTS ===
+    MIN_ARTICLES_THRESHOLD = 10  # If fewer articles found, use token-based chunking
+    TOKEN_CHUNK_SIZE = 1000  # Approximate tokens per chunk (using chars * 0.25)
+    TOKEN_OVERLAP = 200  # Overlap between chunks in tokens
+    CHARS_PER_TOKEN = 4  # Rough estimate for Arabic text
+
     def __init__(self):
         super().__init__("Article Splitter")
 
     def process(self, data: List[PageContent], context: Dict[str, Any]) -> List[RawArticle]:
         """
         Split pages into articles using sequential article detection.
+        Falls back to token-based chunking if fewer than 10 articles are found.
 
         Args:
             data: List of PageContent from text extraction
@@ -97,9 +104,86 @@ class ArticleSplitterStep(PipelineStep):
         # Split text based on marker positions
         articles = self._split_by_markers(full_text, article_markers, page_map)
 
-        context["articles_found"] = len(articles)
-        self.logger.info(f"Created {len(articles)} articles")
+        # Check if we have enough articles, otherwise use token-based chunking
+        if len(articles) < self.MIN_ARTICLES_THRESHOLD:
+            self.logger.warning(
+                f"Only {len(articles)} articles found (< {self.MIN_ARTICLES_THRESHOLD}). "
+                f"Using token-based chunking instead."
+            )
+            articles = self._token_based_chunking(full_text, page_map)
+            context["chunking_method"] = "token_based"
+        else:
+            context["chunking_method"] = "article_based"
 
+        context["articles_found"] = len(articles)
+        self.logger.info(f"Created {len(articles)} chunks using {context.get('chunking_method', 'unknown')} method")
+
+        return articles
+
+    def _token_based_chunking(
+        self, 
+        text: str, 
+        page_map: Dict[int, int]
+    ) -> List[RawArticle]:
+        """
+        Fallback: Split text into fixed-size chunks based on token count.
+        
+        Uses approximately 1000 tokens per chunk with 200 token overlap.
+        
+        Args:
+            text: Full document text
+            page_map: Character position to page number mapping
+            
+        Returns:
+            List of RawArticle objects (using article_number as chunk index)
+        """
+        chunk_size_chars = self.TOKEN_CHUNK_SIZE * self.CHARS_PER_TOKEN  # ~4000 chars
+        overlap_chars = self.TOKEN_OVERLAP * self.CHARS_PER_TOKEN  # ~800 chars
+        step_size = chunk_size_chars - overlap_chars  # ~3200 chars per step
+        
+        articles = []
+        chunk_num = 1
+        pos = 0
+        
+        while pos < len(text):
+            # Get chunk with overlap
+            chunk_end = min(pos + chunk_size_chars, len(text))
+            chunk_text = text[pos:chunk_end].strip()
+            
+            if chunk_text:
+                page_num = self._find_page_for_position(pos, page_map)
+                
+                articles.append(RawArticle(
+                    article_number=chunk_num,
+                    article_text=f"جزء {chunk_num}",  # "Part X" in Arabic
+                    content=chunk_text,
+                    page_number=page_num,
+                    chapter=self._extract_chapter(chunk_text),
+                ))
+                chunk_num += 1
+            
+            # Move to next position with overlap
+            pos += step_size
+            
+            # If we're near the end, just include the rest
+            if pos + overlap_chars >= len(text):
+                remaining = text[pos:].strip()
+                if remaining and len(remaining) > 100:
+                    page_num = self._find_page_for_position(pos, page_map)
+                    articles.append(RawArticle(
+                        article_number=chunk_num,
+                        article_text=f"جزء {chunk_num}",
+                        content=remaining,
+                        page_number=page_num,
+                        chapter=self._extract_chapter(remaining),
+                    ))
+                break
+        
+        self.logger.info(
+            f"Token-based chunking created {len(articles)} chunks "
+            f"(~{self.TOKEN_CHUNK_SIZE} tokens each, {self.TOKEN_OVERLAP} overlap)"
+        )
+        
         return articles
 
     def _find_article_markers(self, text: str) -> List[ArticleMatch]:
