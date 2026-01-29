@@ -132,13 +132,25 @@ class RerankerService:
         
         # Score
         with torch.no_grad():
-            scores = self.model(**inputs).logits.squeeze(-1)
-        
-        # Handle single document case
+            logits = self.model(**inputs).logits
+            # Handle different model output shapes:
+            # - Single output (num_labels=1): logits shape [batch, 1] -> squeeze to [batch]
+            # - Binary classification (num_labels=2): use positive class logit at index 1
+            # - Multi-class: use max logit as relevance score
+            if logits.shape[-1] == 1:
+                scores = logits.squeeze(-1)
+            elif logits.shape[-1] == 2:
+                # Binary classification: use positive class logit
+                scores = logits[:, 1]
+            else:
+                # Multi-class: use max logit as relevance score
+                scores = logits.max(dim=-1).values
+
+        # Handle single document case (0-dim tensor after squeeze)
         if len(scores.shape) == 0:
             scores = scores.unsqueeze(0)
-        
-        # Convert to list
+
+        # Convert to list of floats
         scores_list = scores.cpu().tolist()
         
         # Add scores to documents
@@ -173,8 +185,18 @@ class RerankerService:
         ).to(self.device)
         
         with torch.no_grad():
-            score = self.model(**inputs).logits.squeeze(-1)
-        
+            logits = self.model(**inputs).logits
+            # Handle different model output shapes
+            if logits.shape[-1] == 1:
+                score = logits.squeeze(-1)
+            elif logits.shape[-1] == 2:
+                # Binary classification: use positive class logit
+                score = logits[:, 1]
+            else:
+                score = logits.max(dim=-1).values
+            # Squeeze batch dimension for single pair
+            score = score.squeeze()
+
         return float(score.cpu())
     
     def get_model_info(self) -> dict:
