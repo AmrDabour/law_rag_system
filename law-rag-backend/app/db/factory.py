@@ -226,8 +226,6 @@ class CollectionFactory:
             "collection_name": collection_name,
             "country": country.value,
             "points_count": info.points_count,
-            "vectors_count": info.vectors_count,
-            "indexed_vectors_count": info.indexed_vectors_count,
             "status": info.status.value,
             "config": {
                 "dense_size": settings.EMBEDDING_DIMENSION,

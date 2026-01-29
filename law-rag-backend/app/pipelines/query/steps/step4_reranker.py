@@ -78,9 +78,20 @@ class RerankerStep(PipelineStep):
         
         # Log top results
         for i, chunk in enumerate(result[:3], 1):
+            article_num = chunk.article_number if chunk.article_number is not None else "N/A"
+            # Safely handle rerank_score - ensure it's a number
+            if chunk.rerank_score is None:
+                rerank_score = 0.0
+            elif isinstance(chunk.rerank_score, (int, float)):
+                rerank_score = float(chunk.rerank_score)
+            else:
+                # If it's something unexpected (like a list), convert to string
+                rerank_score = 0.0
+                self.logger.warning(f"Unexpected rerank_score type: {type(chunk.rerank_score)}")
+            
             self.logger.debug(
-                f"  #{i}: مادة {chunk.article_number} "
-                f"(rerank={chunk.rerank_score:.4f})"
+                f"  #{i}: مادة {article_num} "
+                f"(rerank={rerank_score:.4f})"
             )
         
         return result

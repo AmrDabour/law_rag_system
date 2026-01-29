@@ -48,10 +48,12 @@ class SparseEncoderStep(PipelineStep):
         
         # Extract content for batch encoding
         contents = [chunk.content for chunk in data]
+        total = len(contents)
         
-        self.logger.info(f"Generating sparse vectors for {len(contents)} chunks...")
+        self.logger.info(f"📊 Generating sparse vectors for {total} chunks...")
+        print(f"\n🔄 Sparse Encoding Progress ({total} chunks):")
         
-        # Batch encode
+        # Batch encode with progress
         sparse_vectors = self.sparse_service.encode_batch(contents)
         
         # Assign sparse vectors to chunks

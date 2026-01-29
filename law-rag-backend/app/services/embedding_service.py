@@ -115,16 +115,20 @@ class EmbeddingService:
             return []
         
         bs = batch_size or settings.EMBEDDING_BATCH_SIZE
+        total = len(texts)
+        
+        logger.info(f"📊 Embedding {total} chunks (batch_size={bs})...")
         
         with torch.no_grad():
             embeddings = self.model.encode(
                 texts,
                 normalize_embeddings=True,
                 batch_size=bs,
-                show_progress_bar=show_progress,
+                show_progress_bar=True,  # Always show progress
                 convert_to_numpy=True,
             )
         
+        logger.info(f"✅ Embedded {total} chunks successfully")
         return embeddings.tolist()
     
     def get_dimension(self) -> int:

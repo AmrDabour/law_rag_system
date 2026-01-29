@@ -121,7 +121,11 @@ class QueryPipeline:
         
         output = formatter.process((answer, reranked), context)
         
-        logger.info(f"Query completed in {query_time_ms:.0f}ms")
+        # Ensure query_time_ms is a number for formatting
+        if isinstance(query_time_ms, (int, float)):
+            logger.info(f"Query completed in {query_time_ms:.0f}ms")
+        else:
+            logger.info(f"Query completed in {query_time_ms}ms")
         
         return output
     

@@ -50,7 +50,9 @@ class QdrantStorerStep(PipelineStep):
         if not collection_name:
             raise ValueError("collection_name not found in context")
         
-        self.logger.info(f"Storing {len(data)} chunks to {collection_name}...")
+        total = len(data)
+        self.logger.info(f"📦 Storing {total} chunks to {collection_name}...")
+        print(f"\n📦 Qdrant Storage Progress ({total} chunks):")
         
         # Convert chunks to Qdrant points
         points = [chunk.to_qdrant_point() for chunk in data]

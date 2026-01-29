@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: Optional[str] = None
     REDIS_DB: int = 0
-    SESSION_TTL_SECONDS: int = 86400  # 24 hours
+    SESSION_TTL: int = 86400  # 24 hours
     
     # === Embedding Model (Dense) ===
     EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-0.6B"
@@ -75,8 +75,9 @@ class Settings(BaseSettings):
     RERANKER_MAX_LENGTH: int = 512
     
     # === Search Configuration ===
-    HYBRID_PREFETCH_LIMIT: int = 25  # Top-K for each search type
+    HYBRID_PREFETCH: int = 25  # Top-K for each search type before reranking
     RERANK_TOP_K: int = 5  # Final top-K after reranking
+    DEFAULT_TOP_K: int = 5  # Default number of results to return
     
     # === Chunking Configuration ===
     MAX_CHUNK_TOKENS: int = 1000
@@ -86,6 +87,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra environment variables
 
 
 @lru_cache()

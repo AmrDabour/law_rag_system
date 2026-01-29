@@ -42,6 +42,15 @@ class FormatterStep(PipelineStep):
         
         # Get timing from context
         query_time_ms = context.get("query_time_ms", 0)
+        # Ensure it's a number, not a list or other type
+        if isinstance(query_time_ms, (int, float)):
+            query_time_ms = float(query_time_ms)
+        elif isinstance(query_time_ms, (list, tuple)) and len(query_time_ms) > 0:
+            # If it's a list/tuple, try to get the first element
+            query_time_ms = float(query_time_ms[0]) if isinstance(query_time_ms[0], (int, float)) else 0.0
+        else:
+            # For any other type, default to 0.0
+            query_time_ms = 0.0
         
         # Build output
         output = QueryOutput(

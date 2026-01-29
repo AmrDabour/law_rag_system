@@ -94,15 +94,21 @@ class SparseEncoderService:
         if not texts:
             return []
         
-        embeddings = list(self.model.embed(texts))
+        from tqdm import tqdm
         
-        return [
-            {
+        total = len(texts)
+        logger.info(f"📊 Sparse encoding {total} texts...")
+        
+        results = []
+        # Process with progress bar
+        for emb in tqdm(self.model.embed(texts), total=total, desc="Sparse Encoding", unit="chunk"):
+            results.append({
                 "indices": emb.indices.tolist(),
                 "values": emb.values.tolist(),
-            }
-            for emb in embeddings
-        ]
+            })
+        
+        logger.info(f"✅ Sparse encoded {total} texts successfully")
+        return results
     
     def get_model_info(self) -> dict:
         """Get model information"""

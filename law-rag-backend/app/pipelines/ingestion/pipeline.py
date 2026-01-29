@@ -100,7 +100,7 @@ class IngestionPipeline:
         
         logger.info(f"Starting ingestion: {filename} -> {collection_name}")
         
-        # Run pipeline
+        # Run pipeline (synchronous but wrapped for async context)
         result = self.pipeline.run(pdf_content, context)
         
         duration_ms = (time.time() - start_time) * 1000

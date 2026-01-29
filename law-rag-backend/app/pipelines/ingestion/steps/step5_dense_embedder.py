@@ -48,13 +48,15 @@ class DenseEmbedderStep(PipelineStep):
         
         # Extract content for batch embedding
         contents = [chunk.content for chunk in data]
+        total = len(contents)
         
-        self.logger.info(f"Generating dense embeddings for {len(contents)} chunks...")
+        self.logger.info(f"📊 Generating dense embeddings for {total} chunks...")
+        print(f"\n🔄 Dense Embedding Progress ({total} chunks):")
         
-        # Batch embed
+        # Batch embed - always show progress
         embeddings = self.embedding_service.embed_batch(
             contents,
-            show_progress=len(contents) > 50,
+            show_progress=True,  # Always show progress
         )
         
         # Assign embeddings to chunks

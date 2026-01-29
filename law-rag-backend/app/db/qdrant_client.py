@@ -125,37 +125,44 @@ class QdrantManager:
         Returns:
             Number of points upserted
         """
-        total = 0
+        from tqdm import tqdm
         
-        for i in range(0, len(points), batch_size):
-            batch = points[i:i + batch_size]
-            
-            point_structs = []
-            for p in batch:
-                # Build vector dict
-                vectors = {}
-                if "dense_vector" in p:
-                    vectors["dense"] = p["dense_vector"]
-                if "sparse_vector" in p:
-                    vectors["sparse"] = models.SparseVector(
-                        indices=p["sparse_vector"]["indices"],
-                        values=p["sparse_vector"]["values"],
-                    )
+        total = 0
+        num_batches = (len(points) + batch_size - 1) // batch_size
+        
+        logger.info(f"📊 Storing {len(points)} points to Qdrant ({num_batches} batches)...")
+        
+        with tqdm(total=len(points), desc="Storing in Qdrant", unit="point") as pbar:
+            for i in range(0, len(points), batch_size):
+                batch = points[i:i + batch_size]
                 
-                point_structs.append(PointStruct(
-                    id=p["id"],
-                    vector=vectors,
-                    payload=p.get("payload", {}),
-                ))
+                point_structs = []
+                for p in batch:
+                    # Build vector dict
+                    vectors = {}
+                    if "dense_vector" in p:
+                        vectors["dense"] = p["dense_vector"]
+                    if "sparse_vector" in p:
+                        vectors["sparse"] = models.SparseVector(
+                            indices=p["sparse_vector"]["indices"],
+                            values=p["sparse_vector"]["values"],
+                        )
+                    
+                    point_structs.append(PointStruct(
+                        id=p["id"],
+                        vector=vectors,
+                        payload=p.get("payload", {}),
+                    ))
+                
+                self.client.upsert(
+                    collection_name=collection_name,
+                    points=point_structs,
+                    wait=True,
+                )
+                total += len(batch)
+                pbar.update(len(batch))
             
-            self.client.upsert(
-                collection_name=collection_name,
-                points=point_structs,
-                wait=True,
-            )
-            total += len(batch)
-            
-        logger.info(f"Upserted {total} points to {collection_name}")
+        logger.info(f"✅ Upserted {total} points to {collection_name}")
         return total
     
     def hybrid_search(

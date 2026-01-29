@@ -193,17 +193,17 @@ class MetadataEnricherStep(PipelineStep):
         part: int,
     ) -> str:
         """
-        Generate unique chunk ID.
+        Generate unique chunk ID as UUID (required by Qdrant).
         
-        Format: {country}_{law_type}_art{article}_p{part}_{hash}
+        Uses UUID5 with namespace based on content for deterministic IDs.
         """
-        base = f"{country}_{law_type}_art{article_number or 0}_p{part}"
+        import uuid
         
-        # Add short hash for uniqueness
-        hash_input = f"{base}_{id(self)}"
-        short_hash = hashlib.md5(hash_input.encode()).hexdigest()[:8]
+        # Create a deterministic UUID based on content
+        base = f"{country}_{law_type}_art{article_number or 0}_p{part}_{id(self)}"
         
-        return f"{base}_{short_hash}"
+        # UUID5 creates deterministic UUID from namespace + name
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
     
     def validate_input(self, data: Any) -> bool:
         """Validate input"""

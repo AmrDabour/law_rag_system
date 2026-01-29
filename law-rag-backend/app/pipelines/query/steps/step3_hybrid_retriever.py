@@ -62,7 +62,7 @@ class HybridRetrieverStep(PipelineStep):
         # Build filter from context
         filter_conditions = self._build_filter(context)
         
-        limit = settings.HYBRID_PREFETCH_LIMIT  # 25
+        limit = settings.HYBRID_PREFETCH  # 25
         
         self.logger.info(f"Hybrid search in {collection_name} (limit={limit})")
         
