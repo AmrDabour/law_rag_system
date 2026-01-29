@@ -58,12 +58,18 @@ class RerankerStep(PipelineStep):
         docs = [{"content": chunk.content, "chunk": chunk} for chunk in data]
         
         # Rerank
-        reranked = self.reranker.rerank(
-            query=query,
-            documents=docs,
-            top_k=top_k,
-            content_key="content",
-        )
+        import traceback
+        try:
+            reranked = self.reranker.rerank(
+                query=query,
+                documents=docs,
+                top_k=top_k,
+                content_key="content",
+            )
+        except Exception as e:
+            self.logger.error(f"Reranker error: {e}")
+            self.logger.error(f"Traceback:\n{traceback.format_exc()}")
+            raise
         
         # Extract chunks with rerank scores
         result = []

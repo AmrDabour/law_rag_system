@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Ingest All Egyptian Laws
-========================
-Batch ingestion script for all Egyptian law PDFs.
+Ingest All Laws - Dynamic Scanner
+=================================
+Batch ingestion script that automatically discovers and ingests all PDF files
+in the laws directory. No need to manually add each law file.
 
 Usage:
     python scripts/ingest_all.py [--country egypt] [--base-url http://localhost:8000]
+    python scripts/ingest_all.py --country egypt --file "القانون المدني.pdf"  # Single file
 """
 
 import os
@@ -13,49 +15,80 @@ import sys
 import argparse
 import httpx
 import time
+import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-# === Egyptian Laws Metadata ===
-EGYPT_LAWS = [
-    {
-        "file": "القانون الجنائي.pdf",
-        "law_type": "criminal",
-        "law_name": "قانون العقوبات",
-        "law_name_en": "Penal Code",
-        "law_number": "58",
-        "law_year": "1937",
-    },
-    {
-        "file": "القانون المدني.pdf",
-        "law_type": "civil",
-        "law_name": "القانون المدني",
-        "law_name_en": "Civil Code",
-        "law_number": "131",
-        "law_year": "1948",
-    },
-    {
-        "file": "القانون الاقتصادي.pdf",
-        "law_type": "economic",
-        "law_name": "قانون الاقتصاد",
-        "law_name_en": "Economic Law",
+# === Country Folder Mappings ===
+COUNTRY_FOLDERS = {
+    "egypt": "Egyptian",
+    "jordan": "Jordanian",
+    "uae": "UAE",
+    "saudi": "Saudi",
+    "kuwait": "Kuwaiti",
+}
+
+# === Law Type Detection (from filename) ===
+LAW_TYPE_KEYWORDS = {
+    "جنائي": "criminal",
+    "عقوبات": "criminal",
+    "جنايات": "criminal",
+    "مدني": "civil",
+    "تجاري": "commercial",
+    "اقتصادي": "economic",
+    "تحكيم": "arbitration",
+    "عمل": "labor",
+    "أحوال شخصية": "personal_status",
+    "إداري": "administrative",
+}
+
+
+def detect_law_type(filename: str) -> str:
+    """Detect law type from filename using keywords."""
+    for keyword, law_type in LAW_TYPE_KEYWORDS.items():
+        if keyword in filename:
+            return law_type
+    return "general"
+
+
+def generate_law_metadata(pdf_path: Path) -> Dict[str, Any]:
+    """
+    Generate metadata for a PDF file based on its filename.
+
+    The filename is used as the law name, and law type is auto-detected.
+    """
+    filename = pdf_path.stem  # filename without extension
+
+    return {
+        "file": pdf_path.name,
+        "law_type": detect_law_type(filename),
+        "law_name": filename,
+        "law_name_en": "",  # Can be filled manually if needed
         "law_number": "",
         "law_year": "",
-    },
-]
+    }
 
-# === Country Mappings ===
-COUNTRY_LAWS = {
-    "egypt": {
-        "folder": "Egyptian",
-        "laws": EGYPT_LAWS,
-    },
-    # Add more countries here:
-    # "jordan": {
-    #     "folder": "Jordanian",
-    #     "laws": JORDAN_LAWS,
-    # },
-}
+
+def discover_laws(country_dir: Path) -> List[Dict[str, Any]]:
+    """
+    Discover all PDF files in a directory and generate metadata for each.
+
+    Args:
+        country_dir: Path to the country's law directory
+
+    Returns:
+        List of law metadata dicts
+    """
+    laws = []
+
+    # Find all PDF files
+    pdf_files = sorted(country_dir.glob("*.pdf"))
+
+    for pdf_path in pdf_files:
+        metadata = generate_law_metadata(pdf_path)
+        laws.append(metadata)
+
+    return laws
 
 
 def ingest_law(
@@ -107,7 +140,7 @@ def main():
         "--country",
         type=str,
         default="egypt",
-        choices=list(COUNTRY_LAWS.keys()),
+        choices=list(COUNTRY_FOLDERS.keys()),
         help="Country to ingest laws for",
     )
     parser.add_argument(
@@ -128,9 +161,15 @@ def main():
         default=300.0,
         help="Request timeout in seconds",
     )
-    
+    parser.add_argument(
+        "--file",
+        type=str,
+        default=None,
+        help="Ingest a single file instead of all files (filename only)",
+    )
+
     args = parser.parse_args()
-    
+
     # Determine laws directory
     if args.laws_dir:
         laws_base = Path(args.laws_dir)
@@ -140,32 +179,51 @@ def main():
         laws_base = script_dir / "law_material"
         if not laws_base.exists():
             laws_base = script_dir.parent / "law_material"
-    
+
     if not laws_base.exists():
         print(f"❌ Laws directory not found: {laws_base}")
         sys.exit(1)
-    
-    # Get country config
-    country_config = COUNTRY_LAWS.get(args.country)
-    if not country_config:
+
+    # Get country folder
+    country_folder = COUNTRY_FOLDERS.get(args.country)
+    if not country_folder:
         print(f"❌ Unknown country: {args.country}")
+        print(f"   Available: {', '.join(COUNTRY_FOLDERS.keys())}")
         sys.exit(1)
-    
-    country_dir = laws_base / country_config["folder"]
+
+    country_dir = laws_base / country_folder
     if not country_dir.exists():
         print(f"❌ Country directory not found: {country_dir}")
+        print(f"   Please create it and add PDF files")
         sys.exit(1)
-    
-    laws = country_config["laws"]
+
+    # Discover laws dynamically from the directory
+    laws = discover_laws(country_dir)
+
+    # Filter to single file if specified
+    if args.file:
+        laws = [l for l in laws if l["file"] == args.file]
+        if not laws:
+            print(f"❌ File not found: {args.file}")
+            print(f"   Available files in {country_dir}:")
+            for pdf in country_dir.glob("*.pdf"):
+                print(f"     - {pdf.name}")
+            sys.exit(1)
     
     print("=" * 60)
-    print(f"Egyptian Law RAG - Batch Ingestion")
+    print(f"Law RAG - Dynamic Batch Ingestion")
     print("=" * 60)
     print(f"Country: {args.country}")
     print(f"Laws directory: {country_dir}")
     print(f"API URL: {args.base_url}")
-    print(f"Laws to ingest: {len(laws)}")
+    print(f"PDF files found: {len(laws)}")
+    if args.file:
+        print(f"Single file mode: {args.file}")
     print("=" * 60)
+
+    if len(laws) == 0:
+        print("⚠️ No PDF files found in directory")
+        sys.exit(0)
     
     # Check API health
     try:

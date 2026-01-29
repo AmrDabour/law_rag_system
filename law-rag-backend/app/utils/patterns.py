@@ -27,21 +27,25 @@ class ArticlePatterns:
     
     # === ARTICLE DETECTION PATTERNS ===
     # These patterns match article markers in Arabic legal text
+    # Note: [\s\n]* handles multi-line spacing from PDF extraction
+    # Also handles Arabic presentation forms (ﻣﺎدة) from some PDF extractors
     ARTICLE_PATTERNS = [
-        r'مادة\s*([٠-٩]+)',              # مادة ١٢٣ (Arabic numerals)
-        r'مادة\s*([0-9]+)',              # مادة 123 (English numerals)
-        r'مادة\s*\(([٠-٩0-9]+)\)',       # مادة (١٢٣) (parentheses)
-        r'مادة\s*\[([٠-٩0-9]+)\]',       # مادة [10] (square brackets)
-        r'المادة\s*([٠-٩0-9]+)',         # المادة ١٢٣ (with ال)
-        r'المادة\s*\(([٠-٩0-9]+)\)',     # المادة (١٢٣)
-        r'المادة\s*\[([٠-٩0-9]+)\]',     # المادة [10]
+        r'(?:مادة|ﻣﺎدة)[\s\n]*([٠-٩]+)',              # مادة ١٢٣ (Arabic numerals)
+        r'(?:مادة|ﻣﺎدة)[\s\n]*([0-9]+)',              # مادة 123 (English numerals)
+        r'(?:مادة|ﻣﺎدة)[\s\n]*\(([٠-٩0-9]+)\)',       # مادة (١٢٣) (parentheses)
+        r'(?:مادة|ﻣﺎدة)[\s\n]*\[([٠-٩0-9]+)\]',       # مادة [10] (square brackets)
+        r'(?:المادة|اﻟﻤﺎدة)[\s\n]*([٠-٩0-9]+)',         # المادة ١٢٣ (with ال)
+        r'(?:المادة|اﻟﻤﺎدة)[\s\n]*\(([٠-٩0-9]+)\)',     # المادة (١٢٣)
+        r'(?:المادة|اﻟﻤﺎدة)[\s\n]*\[([٠-٩0-9]+)\]',     # المادة [10]
     ]
-    
+
     # Combined pattern for detection (non-capturing for splitting)
-    SPLIT_PATTERN = r'(?=(?:مادة|المادة)\s*[\[\(]?[٠-٩0-9]+[\]\)]?)'
-    
+    # Handles formats like: مادة ٩ - (with hyphen), مادة ١٢٣, مادة (١), المادة ١٢٣
+    # Also handles multi-line spacing from PDF extraction
+    SPLIT_PATTERN = r'(?=(?:مادة|المادة|ﻣﺎدة|اﻟﻤﺎدة)[\s\n]*[\[\(]?[٠-٩0-9]+[\]\)]?[\s\n]*[-–—:]?)'
+
     # Pattern for extracting article number from chunk start
-    ARTICLE_START_PATTERN = r'^(?:مادة|المادة)\s*[\[\(]?([٠-٩0-9]+)[\]\)]?'
+    ARTICLE_START_PATTERN = r'^(?:مادة|المادة|ﻣﺎدة|اﻟﻤﺎدة)[\s\n]*[\[\(]?([٠-٩0-9]+)[\]\)]?'
     
     # === CHAPTER/SECTION PATTERNS ===
     CHAPTER_PATTERNS = [
@@ -60,20 +64,21 @@ class ArticlePatterns:
     def find_all_articles(cls, text: str) -> List[ArticleMatch]:
         """
         Find all article markers in text.
-        
+
         Args:
             text: The text to search
-            
+
         Returns:
             List of ArticleMatch objects
         """
         matches = []
-        
+
         for pattern in cls.ARTICLE_PATTERNS:
-            for match in re.finditer(pattern, text):
+            # Use MULTILINE flag for patterns with newlines
+            for match in re.finditer(pattern, text, re.MULTILINE):
                 num_str = match.group(1)
                 article_num = ArabicNumerals.extract_number(num_str)
-                
+
                 if article_num is not None:
                     matches.append(ArticleMatch(
                         article_number=article_num,

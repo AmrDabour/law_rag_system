@@ -55,7 +55,23 @@ class RerankerService:
                 self.model_name,
                 trust_remote_code=True,
             )
-            
+
+            # CRITICAL: Always ensure pad_token is properly set for batch processing
+            # Some Qwen models have pad_token set but it doesn't work properly
+            # Force set pad_token to eos_token which is known to work
+            if self._tokenizer.eos_token:
+                self._tokenizer.pad_token = self._tokenizer.eos_token
+                self._tokenizer.pad_token_id = self._tokenizer.eos_token_id
+            elif self._tokenizer.pad_token is None:
+                self._tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+
+            # Set padding side (required for decoder-only models like Qwen)
+            self._tokenizer.padding_side = 'left'
+
+            logger.info(f"   pad_token: {self._tokenizer.pad_token}")
+            logger.info(f"   pad_token_id: {self._tokenizer.pad_token_id}")
+            logger.info(f"   padding_side: {self._tokenizer.padding_side}")
+
             # Load model
             dtype = get_torch_dtype(self.device)
             self._model = AutoModelForSequenceClassification.from_pretrained(
@@ -63,7 +79,13 @@ class RerankerService:
                 trust_remote_code=True,
                 torch_dtype=dtype,
             )
-            
+
+            # CRITICAL: Set pad_token_id in model config (required for batch processing)
+            # The model checks its own config, not the tokenizer's pad_token_id
+            if self._model.config.pad_token_id is None:
+                self._model.config.pad_token_id = self._tokenizer.pad_token_id
+                logger.info(f"   Set model.config.pad_token_id to: {self._model.config.pad_token_id}")
+
             # Move to device and set to eval
             self._model = self._model.to(self.device)
             self._model.eval()

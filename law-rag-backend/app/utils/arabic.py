@@ -130,22 +130,56 @@ class ArabicNumerals:
         return text.translate(cls.ENGLISH_TO_ARABIC)
     
     @classmethod
-    def extract_number(cls, text: str) -> Optional[int]:
+    def extract_number(cls, text: str, try_reverse: bool = True) -> Optional[int]:
         """
         Extract first number from text (handles both Arabic and English numerals).
-        
+
+        Also handles reversed Arabic numerals from PDF extraction where RTL text
+        causes multi-digit numbers to be reversed (e.g., ١٢ becomes ٢١).
+
         Args:
             text: Text containing a number
-            
+            try_reverse: If True, also return the reversed number for multi-digit nums
+
         Returns:
             Extracted integer or None if no number found
         """
         # First convert any Arabic numerals to English
         english_text = cls.to_english(text)
-        
+
         # Extract number
         match = re.search(r'\d+', english_text)
-        return int(match.group()) if match else None
+        if not match:
+            return None
+
+        num_str = match.group()
+        return int(num_str)
+
+    @classmethod
+    def extract_number_with_reverse(cls, text: str) -> tuple[Optional[int], Optional[int]]:
+        """
+        Extract number and its reversed form (for handling RTL PDF extraction issues).
+
+        Returns:
+            Tuple of (normal_number, reversed_number) - reversed is None for single digits
+        """
+        # First convert any Arabic numerals to English
+        english_text = cls.to_english(text)
+
+        # Extract number
+        match = re.search(r'\d+', english_text)
+        if not match:
+            return None, None
+
+        num_str = match.group()
+        normal = int(num_str)
+
+        # For multi-digit numbers, also compute reversed version
+        if len(num_str) > 1:
+            reversed_num = int(num_str[::-1])
+            return normal, reversed_num
+
+        return normal, None
     
     @classmethod
     def format_article_number(cls, number: int, use_arabic: bool = True) -> str:
