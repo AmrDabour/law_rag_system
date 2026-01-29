@@ -193,9 +193,7 @@ async function loadCountryStats() {
 }
 
 function renderCountriesTable() {
-    // Get both tables (Dashboard and Laws Management have separate tbodies)
     const tbodyDashboard = document.getElementById('countries-tbody');
-    const tbodyLaws = document.getElementById('countries-tbody-laws');
 
     const tableHTML = Object.entries(countriesData).map(([code, data]) => {
         const country = COUNTRIES[code] || { name: code, flag: '🏳️' };
@@ -227,9 +225,8 @@ function renderCountriesTable() {
     `;
     }).join('');
 
-    // Populate both tables
+    // Populate dashboard table
     if (tbodyDashboard) tbodyDashboard.innerHTML = tableHTML;
-    if (tbodyLaws) tbodyLaws.innerHTML = tableHTML;
 }
 
 // ========================================
