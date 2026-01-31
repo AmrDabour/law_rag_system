@@ -27,6 +27,7 @@ fastembed>=0.4.2  # Not installed. Run: pip install fastembed>=0.4.2
 
 # === PDF Processing ===
 pymupdf>=1.25.0
+python-bidi>=0.4.2  # RTL text handling for Arabic PDFs
 
 # === LangChain (for text processing utilities) ===
 langchain>=0.3.7

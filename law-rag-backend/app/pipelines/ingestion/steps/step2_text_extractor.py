@@ -1,11 +1,19 @@
 """
 Step 2: Text Extractor
-Extract Arabic text from PDF pages
+Extract Arabic text from PDF pages with proper RTL handling
 """
 
 from typing import Any, Dict, List
 import fitz  # PyMuPDF
 import logging
+import re
+
+# RTL text handling
+try:
+    from bidi.algorithm import get_display
+    BIDI_AVAILABLE = True
+except ImportError:
+    BIDI_AVAILABLE = False
 
 from app.pipelines.base import PipelineStep
 from app.pipelines.ingestion.models import PageContent
@@ -19,10 +27,14 @@ class TextExtractorStep(PipelineStep):
     
     Input: fitz.Document
     Output: List[PageContent] with page number and text
+    
+    Includes RTL text fixing for Arabic content using python-bidi.
     """
     
     def __init__(self):
         super().__init__("Text Extractor")
+        if not BIDI_AVAILABLE:
+            self.logger.warning("python-bidi not installed. RTL text may be reversed.")
     
     def process(self, data: fitz.Document, context: Dict[str, Any]) -> List[PageContent]:
         """
@@ -44,8 +56,9 @@ class TextExtractorStep(PipelineStep):
             # Extract text
             text = page.get_text("text")
             
-            # Clean up text
+            # Clean up and fix RTL text
             text = self._clean_text(text)
+            text = self._fix_rtl_text(text)
             
             if text.strip():
                 pages.append(PageContent(
@@ -85,6 +98,44 @@ class TextExtractorStep(PipelineStep):
         
         return '\n'.join(cleaned_lines)
     
+    def _fix_rtl_text(self, text: str) -> str:
+        """
+        Fix RTL text ordering issues from PDF extraction.
+        
+        PyMuPDF extracts text in the order stored in the PDF, which for RTL
+        languages often means numbers are reversed (e.g., 2008 becomes 8002).
+        
+        This method applies the Unicode Bidirectional Algorithm to fix the
+        logical ordering of characters while preserving the visual appearance.
+        
+        Args:
+            text: Extracted text with potential RTL issues
+            
+        Returns:
+            Text with corrected RTL ordering
+        """
+        if not BIDI_AVAILABLE or not text:
+            return text
+        
+        try:
+            # Process line by line to preserve structure
+            lines = text.split('\n')
+            fixed_lines = []
+            
+            for line in lines:
+                if line.strip():
+                    # Apply bidi algorithm to fix RTL ordering
+                    # get_display converts logical order to visual order
+                    fixed_line = get_display(line)
+                    fixed_lines.append(fixed_line)
+                else:
+                    fixed_lines.append(line)
+            
+            return '\n'.join(fixed_lines)
+        except Exception as e:
+            self.logger.warning(f"RTL fixing failed: {e}")
+            return text
+    
     def validate_input(self, data: Any) -> bool:
         """Validate input is a fitz Document"""
         return isinstance(data, fitz.Document)
@@ -96,3 +147,4 @@ class TextExtractorStep(PipelineStep):
         if isinstance(data, list):
             return len(data)
         return 0
+

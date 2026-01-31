@@ -556,15 +556,23 @@ async function createSession() {
             body: JSON.stringify({})
         });
 
+        // Validate session_id was returned
+        if (!response.session_id) {
+            throw new Error('No session_id returned from server');
+        }
+
+        // Clear chat FIRST (this resets currentSessionId to null)
+        clearChat();
+
+        // Then set the new session ID
         currentSessionId = response.session_id;
 
-        // Clear chat and switch to chat section
-        clearChat();
         switchSection('chat');
 
         // Add welcome message with session info
+        const sessionIdDisplay = currentSessionId.substring(0, 8);
         addChatMessage(
-            `مرحباً! جلسة جديدة تم إنشاؤها.\\nSession ID: ${currentSessionId.substring(0, 8)}...\\n\\nيمكنك سؤالي عن أي قانون.`,
+            `مرحباً! جلسة جديدة تم إنشاؤها.\nSession ID: ${sessionIdDisplay}...\n\nيمكنك سؤالي عن أي قانون.`,
             'assistant'
         );
 

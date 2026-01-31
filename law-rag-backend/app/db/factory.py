@@ -161,14 +161,12 @@ class CollectionFactory:
                     "collection": collection_name,
                     "points_count": info.points_count,
                     "status": "active",
-                    "vectors_count": info.vectors_count,
                 }
             else:
                 result[country.value] = {
                     "collection": collection_name,
                     "points_count": 0,
                     "status": "not_initialized",
-                    "vectors_count": 0,
                 }
         
         return result
