@@ -92,6 +92,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # GPU Support for NVIDIA RTX
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
