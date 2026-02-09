@@ -2,6 +2,8 @@
 
 A professional Retrieval-Augmented Generation (RAG) system for Egyptian legal documents with hybrid search, cross-encoder reranking, and multi-country support.
 
+> **Admin GUI**: Once the server is running, open [http://localhost:8000/static/admin.html](http://localhost:8000/static/admin.html) to access the built-in admin panel (Dashboard, Ingest, Chat, Sessions, Chunks).
+
 ## Features
 
 - 🔍 **Hybrid Search**: Dense (Qwen3-Embedding) + Sparse (BM25) with RRF fusion
@@ -9,7 +11,8 @@ A professional Retrieval-Augmented Generation (RAG) system for Egyptian legal do
 - 📜 **Article-Based Chunking**: Splits on مادة patterns for accurate citations
 - 🌍 **Multi-Country Support**: Egypt, Jordan, UAE, Saudi Arabia, Kuwait
 - 💬 **Session Management**: Redis-backed conversation history
-- 🐳 **Docker Ready**: Single command deployment
+- �️ **Admin GUI**: Built-in web interface for dashboard, ingestion, chat, sessions, and chunk browsing
+- �🐳 **Docker Ready**: Single command deployment
 
 ## Architecture
 
@@ -66,6 +69,16 @@ curl -X POST http://localhost:8000/api/v1/query \
   -H "Content-Type: application/json" \
   -d '{"question": "ما هي عقوبة السرقة في القانون المصري؟", "country": "egypt"}'
 ```
+
+### 5. Admin GUI
+
+Open [http://localhost:8000/static/admin.html](http://localhost:8000/static/admin.html) in your browser to access the built-in admin panel with:
+
+- **Dashboard** — System stats and overview
+- **Ingest** — Upload and ingest law PDFs
+- **Chat** — Ask legal questions interactively
+- **Sessions** — View and manage conversation history
+- **Chunks** — Browse indexed document chunks
 
 ## API Endpoints
 
