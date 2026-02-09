@@ -129,7 +129,7 @@ The system recognizes these مادة (article) patterns:
 
 ## Adding New Countries
 
-1. Create folder in `law_material/{CountryName}/`
+1. Create folder in `app/law_material/{CountryName}/`
 2. Add PDFs with Arabic law text
 3. Update `COUNTRY_LAWS` in `scripts/ingest_all.py`
 4. Run ingestion for new country

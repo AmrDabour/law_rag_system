@@ -74,6 +74,7 @@ class QdrantManager:
         return {
             "name": collection_name,
             "points_count": info.points_count,
+            "vectors_count": info.vectors_count,
             "status": info.status.value,
         }
     

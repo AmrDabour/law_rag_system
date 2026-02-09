@@ -1,6 +1,7 @@
 # ===================================================
-# Egyptian Law RAG System - Docker Compose
-# Run with: docker compose up --build
+# Egyptian Law RAG System - Docker Compose (CPU Only)
+# For systems without GPU - uses CPU for all inference
+# Run with: docker compose -f docker-compose.cpu.yml up --build
 # ===================================================
 
 services:
@@ -40,7 +41,7 @@ services:
       retries: 5
       start_period: 5s
 
-  # === Law RAG API ===
+  # === Law RAG API (CPU Only) ===
   app:
     build:
       context: .
@@ -51,10 +52,13 @@ services:
       - "8000:8000"
     volumes:
       # Mount law materials for ingestion
-      - ../law_material:/app/law_material:ro
+      - ./app/law_material:/app/app/law_material:ro
       # Model cache persistence
       - model_cache:/home/appuser/.cache/huggingface
     environment:
+      # Force CPU mode
+      - CUDA_VISIBLE_DEVICES=""
+      
       # App Settings
       - APP_NAME=Egyptian Law RAG API
       - APP_VERSION=1.0.0
@@ -70,7 +74,7 @@ services:
       - REDIS_PORT=6379
       - REDIS_DB=0
       
-      # Google API (use .env or secrets)
+      # Google API
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       
       # Models
@@ -92,20 +96,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # GPU Support for NVIDIA RTX
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s
+      start_period: 180s  # Longer for CPU model loading
+    # CPU resource limits (adjust based on your system)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
 
 volumes:
   qdrant_data:

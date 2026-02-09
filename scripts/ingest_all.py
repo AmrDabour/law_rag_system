@@ -174,11 +174,11 @@ def main():
     if args.laws_dir:
         laws_base = Path(args.laws_dir)
     else:
-        # Default: look for law_material in parent or current directory
+        # Default: look for law_material inside app/ directory
         script_dir = Path(__file__).parent.parent
-        laws_base = script_dir / "law_material"
+        laws_base = script_dir / "app" / "law_material"
         if not laws_base.exists():
-            laws_base = script_dir.parent / "law_material"
+            laws_base = script_dir.parent / "app" / "law_material"
 
     if not laws_base.exists():
         print(f"❌ Laws directory not found: {laws_base}")
