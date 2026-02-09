@@ -2,7 +2,7 @@
 
 A professional Retrieval-Augmented Generation (RAG) system for Egyptian legal documents with hybrid search, cross-encoder reranking, and multi-country support.
 
-> **Admin GUI**: Once the server is running, open [http://localhost:8000/static/admin.html](http://localhost:8000/static/admin.html) to access the built-in admin panel (Dashboard, Ingest, Chat, Sessions, Chunks).
+> **Admin GUI**: Once the server is running, open [http://localhost:8000/static/admin.html]to access the built-in admin panel (Dashboard, Ingest, Chat, Sessions, Chunks).
 
 ## Features
 
